@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Ajax</title>
+  <style>
+    *{
+      margin: 0;
+      padding: 0;
+    }
+    a{
+      text-decoration: none;
+    }
+    .menu-tabs{
+      display: -webkit-flex;
+      display: flex;
+    }
+    .menu-item.active{
+      background-color: blue;
+      color: #fff;
+    }
+    .menu-item{
+      flex:1;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      font-size:18px;
+      border:1px solid blue;
+    }
+    .menu-item:first-child{
+      border-left: none;
+    }
+    .menu-item:last-child{
+      border-right: none;
+      border-left: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- <div class="box">
+    <div class="username"></div>
+    <div class="city"></div>
+    <div class="company"></div>
+  </div> -->
+  <div class="menu-tabs">
+    <a href="javascript:;" class="menu-item active" data-sex="1">男生</a>
+    <a href="javascript:;" class="menu-item" data-sex="0">女生</a>
+  </div>
+  <div class="content">
+    <ul class="user-list">
+        <li class="username"></li>
+        <li class="city"></li>
+        <li class="company"></li>
+    </ul>
+  </div>
+  <!-- 移动端使用zepto 比起jquery更小 -->
+  <!--<script src="https://cdn.bootcss.com/zepto/1.2.0/zepto.min.js"></script>-->
+   <script src="https://cdn.bootcss.com/jquery/1.9.1/jquery.min.js"></script> 
+  <script>
+    // jQuery方法请求ajax
+    // $(function(){
+    //   console.log('jadss')
+    //   $.getJSON('/api',function(data){
+    //     console.log(data)
+    //     $('.username').text(data.name)
+    //     $('.city').text(data.city)
+    //     $('.company').text(data.company)
+    //   })
+    // })
+  
+    let ajax={};
+    
+    // xhr对象 ajax核心功能对象
+    ajax.httpRequest=function(){
+      if(window.XMLHttpRequest){
+        return new XMLHttpRequest()
+      }
+      let versions=[
+        "MSXML2.XmlHttp.6.0",
+        "MSXML2.XmlHttp.5.0",
+        "MSXML2.XmlHttp.4.0",
+        "MSXML2.XmlHttp.3.0",
+        "MSXML2.XmlHttp.2.0",
+        "MSXML2.XmlHttp"
+      ];
+      let xhr;
+      for(version of versions){
+        try{
+          xhr=new ActiveXObject(version);
+          break;
+        }catch(e){
+          console.log(e)
+        }
+      }
+      return xhr;
+      }
+      /**
+       * 功能：发送请求，封装函数
+       * @url type string 后端的地址，地址会吐出数据 api地址，前后端分离点
+       * @callback ajax 返回后，回调函数，接下来的页面无刷新更新或其他业务逻辑
+       * @method get post 后端需要知道
+       * @data 请求参数 ？a=11&id=12324
+       * @async boolean true 异步无阻赛的，false 同步的 UI卡顿
+       */
+      ajax.send=function(url,callback,method,data,async){
+        if(async === undefined){
+          async=true;
+        }
+        // xhr对象
+        let httpRequest=ajax.httpRequest();
+        httpRequest.open(method,url,async);
+        httpRequest.onreadystatechange=function(){
+          // 状态码4 （完成）响应内容解析完成，可以在客户端调用了
+          if(httpRequest.readyState==4){
+            callback(httpRequest.responseText)
+          }
+        }
+        if(method=='POST'){
+          httpRequest.setRequestheader('Content-type','application/x-www-form-urlencoded')
+        }
+        httpRequest.send(data);
+      }
+    ajax.get=function(url,data,callback,async){
+      let query=[];
+      for(key in data){
+        query.push(encodeURIComponent(key)+'='+encodeURIComponent(data[key]));
+      }
+      ajax.send(url+(query.length?'?'+query.join('&'):''),
+      callback,'GET',null,async);
+    }
+    ajax.post=(url,data,callback,async)=>{
+      let query=[];
+      for(var key in data){
+        query.push(encodeURIComponent(key)+'='+encodeURIComponent(data[key]));
+      }
+      ajax.send(url,callback,'POST',query.join('&'),async);
+    }
+  
+    document.querySelector('.username').innerHTML =ajax.get('/api',{'sex':'1'},function(res){
+      res=JSON.parse(res)[0]
+      document.querySelector('.username').innerHTML=res.name
+    
+    })
+    document.querySelector('.city').innerHTML =ajax.get('/api',{'sex':'1'},function(res){
+      res=JSON.parse(res)[0]
+        document.querySelector('.city').innerHTML=res.city
+    })
+    document.querySelector('.company').innerHTML =ajax.get('/api',{'sex':'1'},function(res){
+      res=JSON.parse(res)[0]
+      console.log(res.name)
+        document.querySelector('.company').innerHTML=res.company
+    
+    })
+    document.querySelectorAll('.menu-item').forEach(item=>{
+      item.addEventListener('click',function(){
+        if(!this.classList.contains('active')){
+          document.querySelector('.active').classList.remove('active')
+          this.classList.add('active')
+          let sex=this.dataset.sex
+          // 准备要发送的数据
+          let data={'sex':sex}
+          ajax.get('/api',data,function(res){
+            res=JSON.parse(res)
+            console.log(res);
+            document.querySelector('.username').innerHTML=res[0].name
+            document.querySelector('.city').innerHTML=res[0].city
+            document.querySelector('.company').innerHTML=res[0].company
+          })
+        }
+      },false)
+    })
+  </script>
+</body>
+</html>
